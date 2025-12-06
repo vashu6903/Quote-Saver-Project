@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neon Quote Vault</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #7c3aed, #0f172a 60%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: white;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      border-radius: 1.2rem;
+      padding: 1.8rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    h1 {
+      margin: 0 0 0.4rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #cbd5f5;
+      margin-bottom: 1.2rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      border-radius: 0.8rem;
+      padding: 0.75rem;
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      font-size: 0.95rem;
+    }
+
+    textarea::placeholder {
+      color: #cbd5f5;
+    }
+
+    .add-btn {
+      margin-top: 0.6rem;
+      float: right;
+      background: linear-gradient(135deg, #22d3ee, #6366f1);
+      color: white;
+      border: none;
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .add-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 3.2rem 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    li {
+      padding: 0.8rem 2.4rem 0.8rem 0.9rem;
+      border-radius: 0.9rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+      position: relative;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      animation: fadeIn 0.25s ease;
+    }
+
+    li::before {
+      content: "❯";
+      margin-right: 0.4rem;
+      opacity: 0.6;
+    }
+
+    .delete-btn {
+      position: absolute;
+      right: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #fca5a5;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      color: #fecaca;
+    }
+
+    .empty-msg {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #cbd5f5;
+      margin-top: 2.6rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <h1>⚡Mini Quote Saver</h1>
+    <p class="subtitle">Your personal stash of powerful words.</p>
+
+    <form id="quote-form">
+      <textarea id="quote-input" placeholder="Type something worth remembering..."></textarea>
+      <button type="submit" class="add-btn">Save</button>
+    </form>
+
+    <ul id="quote-list"></ul>
+    <p class="empty-msg" id="empty-msg">No quotes yet — start your vault.</p>
+  </div>
+
+  <script>
+    const form = document.getElementById('quote-form');
+    const input = document.getElementById('quote-input');
+    const list = document.getElementById('quote-list');
+    const emptyMsg = document.getElementById('empty-msg');
+
+    const STORAGE_KEY = 'neon-quote-vault';
+
+    let quotes = [];
+
+    function saveQuotes() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes));
+    }
+
+    function loadQuotes() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (!data) return [];
+      try {
+        return JSON.parse(data);
+      } catch {
+        return [];
+      }
+    }
+
+    function render() {
+      list.innerHTML = '';
+
+      if (quotes.length === 0) {
+        emptyMsg.style.display = 'block';
+        return;
+      }
+
+      emptyMsg.style.display = 'none';
+
+      quotes.forEach(q => {
+        const li = document.createElement('li');
+        li.dataset.id = q.id;
+        li.textContent = q.text;
+
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.textContent = '✕';
+
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      quotes.push({
+        id: Date.now().toString(),
+        text
+      });
+
+      saveQuotes();
+      render();
+      input.value = '';
+      input.focus();
+    });
+
+    list.addEventListener('click', e => {
+      if (!e.target.classList.contains('delete-btn')) return;
+      const li = e.target.closest('li');
+      const id = li.dataset.id;
+
+      quotes = quotes.filter(q => q.id !== id);
+      saveQuotes();
+      render();
+    });
+
+    quotes = loadQuotes();
+    render();
+  </script>
+</body>
+</html>
